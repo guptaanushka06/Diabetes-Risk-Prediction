@@ -31,7 +31,8 @@ from src.transformer_utils import (
 # Page setup
 
 st.set_page_config(
-    page_title="Di",
+    page_title="Diabetes Risk Platform",
+    page_icon="🩺",
     layout="wide"
 )
 
@@ -291,6 +292,20 @@ button[data-testid="stNumberInputStepDown"]:hover {
     text-align: left !important;
     border-bottom: 1px solid #EEF2F5 !important;
 }
+button[kind="primary"], button[data-testid="stBaseButton-primary"] {
+    background-color: #6FA8A3 !important;
+    border-color: #6FA8A3 !important;
+    color: #FFFFFF !important;
+}
+button[kind="primary"]:hover, button[data-testid="stBaseButton-primary"]:hover {
+    background-color: #5C948F !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.08);
+}
+[data-testid="stMetricValue"] {
+    font-weight: 700;
+}
 </style>
 """
 
@@ -307,8 +322,8 @@ def render_badge(label, tone):
     colors = TONE_COLORS[tone]
     st.markdown(
         f'<span style="background:{colors["bg"]};color:{colors["fg"]};'
-        f'padding:5px 14px;border-radius:999px;font-weight:600;'
-        f'font-size:0.9rem;display:inline-block;">{label}</span>',
+        f'padding:8px 22px;border-radius:999px;font-weight:600;'
+        f'font-size:1.15rem;display:inline-block;">{label}</span>',
         unsafe_allow_html=True
     )
 
@@ -820,7 +835,8 @@ if page == "Predict":
                                 factor_items = []
                                 for feat, val in top_factors:
                                     direction = "increases" if val > 0 else "decreases"
-                                    factor_items.append(f"<strong>{feat}</strong> &mdash; {direction} predicted risk")
+                                    arrow = '<span style="color:#9B3B4A;">&#9650;</span>' if val > 0 else '<span style="color:#2F6B4F;">&#9660;</span>'
+                                    factor_items.append(f"{arrow} <strong>{feat}</strong> &mdash; {direction} predicted risk")
                                 bullet_list(factor_items)
 
                             with col_b:

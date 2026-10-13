@@ -556,26 +556,47 @@ def compute_risk_score(proba):
     return round(min(score, 100), 1)
 
 
-def get_recommendations(top_factors):
-    """Simple rule-based recommendations keyed off top SHAP features."""
-    tips = {
-        "BMI": "Aim for gradual weight loss through diet and activity.",
-        "HighBP": "Monitor blood pressure regularly and reduce sodium intake.",
-        "HighChol": "Get cholesterol checked annually; consider dietary fat reduction.",
-        "PhysActivity": "Aim for at least 30 minutes of physical activity most days.",
-        "GenHlth": "Discuss your general health trend with a primary care provider.",
-        "HeartDiseaseorAttack": "Follow up with a cardiologist given prior heart history.",
-        "Smoker": "Consider a smoking cessation program.",
-        "Age": "Routine screening becomes more important with age.",
-        "Income": "Look into community health screening programs if cost is a barrier.",
-        "DiffWalk": "Discuss mobility-friendly exercise options with a physical therapist.",
-    }
-    default_tip = "Discuss this factor with a healthcare provider for personalized guidance."
 
-    recs = [tips.get(feature_name, default_tip) for feature_name, _ in top_factors]
-    recs.append("Get an annual HbA1c test to track blood sugar trends over time.")
+def get_recommendations(top_factors):
+    """Return suggestions for features that increase the explained class output."""
+    tips = {
+        "BMI": "Discuss healthy weight and lifestyle goals with a healthcare professional.",
+        "HighBP": "Consider regular blood pressure monitoring and discuss results with a healthcare professional.",
+        "HighChol": "Discuss cholesterol screening and management with a healthcare professional.",
+        "PhysActivity": "Explore regular physical activity suited to your abilities.",
+        "GenHlth": "Discuss your general health and preventive screening with a healthcare professional.",
+        "HeartDiseaseorAttack": "Discuss your cardiovascular history and appropriate follow-up with a healthcare professional.",
+        "Smoker": "Consider support if you want to stop smoking.",
+        "Age": "Discuss appropriate diabetes screening based on your age and risk profile.",
+        "Income": "If cost is a barrier, look for accessible community health screening services.",
+        "DiffWalk": "Discuss safe, mobility-friendly activity options with a healthcare professional.",
+    }
+
+    # Only use factors with positive SHAP values for the explained class.
+    risk_increasing = [
+        (feature, value)
+        for feature, value in top_factors
+        if value > 0
+    ]
+
+    recs = [
+        tips.get(feature, "Discuss this factor with a healthcare professional.")
+        for feature, _ in risk_increasing
+    ]
+
+    if not recs:
+        recs.append(
+            "No risk-increasing factors were identified among the displayed top factors. "
+            "This does not mean that no risk is present."
+        )
+
+    recs.append(
+        "Discuss whether diabetes screening, such as an HbA1c test, is appropriate "
+        "with a healthcare professional."
+    )
 
     return recs[:5]
+
 
 # Sidebar navigation
 
@@ -751,7 +772,8 @@ if page == "Predict":
                 c1, c2, c3 = st.columns(3)
 
                 with c1:
-                    st.metric("Model", selected_model_name)
+                    st.write("**Model**")
+                    st.write(selected_model_name)
 
                 with c2:
                     st.write("**Prediction**")
@@ -776,7 +798,11 @@ if page == "Predict":
                         bullet_list(get_recommendations([]))
                     else:
                         try:
-                            background = X_model_input
+                            bg_raw = load_test_set()[0].sample(n=200, random_state=42)
+                            if selected_model_name in NEEDS_SCALING and scaler is not None:
+                                background = pd.DataFrame(scaler.transform(bg_raw), columns=bg_raw.columns, index=bg_raw.index)
+                            else:
+                                background = bg_raw
                             top_factors = get_top_risk_factors(
                                 selected_model_name,
                                 model,
@@ -786,7 +812,7 @@ if page == "Predict":
                             )
 
                             with col_a:
-                                st.write("**Top Risk Factors**")
+                                st.write("**Top Factors Influencing This Result**")
                                 factor_items = []
                                 for feat, val in top_factors:
                                     direction = "increases" if val > 0 else "decreases"
@@ -795,7 +821,7 @@ if page == "Predict":
 
                             with col_b:
                                 st.write("**Recommendations**")
-                                bullet_list(get_recommendations(top_factors))
+                                bullet_list(get_recommendations([(f, v) for f, v in top_factors if v > 0]))
 
                         except Exception as e:
                             st.info(f"Explanation unavailable for this row ({e}).")

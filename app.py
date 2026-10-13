@@ -720,7 +720,7 @@ if page == "Predict":
         if model is None:
             st.stop()
 
-        X = input_df.copy()
+        X = DataPreprocessing().engineer_features(input_df.copy())
 
         if is_transformer_model(selected_model_name):
             

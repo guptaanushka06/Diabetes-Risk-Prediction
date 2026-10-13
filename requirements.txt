@@ -21,3 +21,4 @@ streamlit
 
 imbalanced-learn
 pytorch_tabular
+pdfplumber

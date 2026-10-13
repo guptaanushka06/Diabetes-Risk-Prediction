@@ -638,6 +638,7 @@ if page == "Predict":
         '<div class="subtle">Upload patient data or enter values manually to generate a risk report.</div>',
         unsafe_allow_html=True
     )
+    st.caption("Screening aid based on survey data, not a medical diagnosis.")
     st.markdown("<hr>", unsafe_allow_html=True)
 
     selected_model_name = None
@@ -787,6 +788,9 @@ if page == "Predict":
                     risk_score = compute_risk_score(proba_row)
                     st.write("**Risk Score**")
                     render_risk_gauge(risk_score)
+                    p1, p2, p3 = st.columns(3)
+                    for col, label, p in zip((p1, p2, p3), CLASS_LABELS.values(), proba_row):
+                        col.metric(label, f"{p*100:.1f}%")
 
                     col_a, col_b = st.columns(2)
 
